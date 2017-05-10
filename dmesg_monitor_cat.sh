@@ -1,11 +1,9 @@
 #!/bin/bash 
 
 # Author : Roger K. Hill  
-# Date : 02/16/2017 
+# Date : 02/08/2017 
 # Org : Yash Technologies / Caterpillar 
-# Desc : hw_mon_cat.sh is a script for us to help check the dmesg utility for hardware related errors and report them via email ... 
-
-### Script global vars ... 
+# Desc : qa basic check with advanced email and reporting capabilites  
 
 SHORTHOST=$(hostname --short)
 PARAMETERS="$@"
@@ -28,10 +26,6 @@ MSGBODYTMPFILE="messagebody.tmp"
 REPORTMODE="false"
 optimizedVal="NO" 
 OLD_IFS=$IFS
-me=`uname -n`
-mehosts=`grep $me /etc/hosts`
-
-### Script global function defs ... 
 
 logit() {
 
@@ -296,59 +290,38 @@ basehardware() {
   fi
 }
 
-
-dmesg_mon(){
-
-  ### ... 1.) dmesg monitoring proto-type ...
-  logit "Beginning dmesg check now" 
-  line
-  if [ "$REPORTMODE" == "true" ];then
-    bldHTMLmsgTableHdrFile "Dmesg Error Checking" "Component" "Value"
-  fi
-  DMESG_ERR_PATTERN="err|bad"
-  MYDMESG=$(/bin/dmesg|egrep -i $DMESG_ERR_PATTERN)
-  for line5 in $MYDMESG
-  do
-    if [ "$MYDMESG" != "" ];then
-      logit "dmesg found" $line5
-    fi
-  done
-  if [ "$REPORTMODE" == "true" ];then
-    bldHTMLmsgTableFtrFile
-  fi
-}
-
-
-
-
-
-
-#######################
-### main line logic ### 
-#######################
-
-if [ "$PARONE" != "" ];then
-  PARONE_VAL=$(echo $PARONE|awk -F= '{print $2}')
-
-  if [ "$PARONE_VAL" == "true" ];then
-    logit "Report mode enabled [ OK ]"
-    REPORTMODE="true"
-  else
-    logit "Report mode off"
-  fi
-
-fi
-
 clear 
 # logit "*** QA Server Basic system checklist ***"
 
+me=`uname -n`
+mehosts=`grep $me /etc/hosts`
+
+## subHeader
 ## bldHTMLmsgTableFtrFile
 ## basehardware
 
 IFS=$'\n'
 
+#######################
+### main line logic ### 
+#######################
+
 ### ... 1.) dmesg monitoring proto-type ... 
-dmesg_mon
+line 
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableHdrFile "Dmesg Error Checking" "Component" "Value"
+fi
+DMESG_ERR_PATTERN="err|bad" 
+MYDMESG=$(/bin/dmesg|egrep -i $DMESG_ERR_PATTERN) 
+for line5 in $MYDMESG 
+do 
+  if [ "$MYDMESG" != "" ];then 
+    logit "dmesg found" $line5 
+  fi 
+done  
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableFtrFile
+fi
 
 IFS=$OLD_IFS
 

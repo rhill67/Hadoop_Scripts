@@ -1,11 +1,9 @@
 #!/bin/bash 
 
 # Author : Roger K. Hill  
-# Date : 02/16/2017 
+# Date : 02/08/2017 
 # Org : Yash Technologies / Caterpillar 
-# Desc : hw_mon_cat.sh is a script for us to help check the dmesg utility for hardware related errors and report them via email ... 
-
-### Script global vars ... 
+# Desc : qa basic check with advanced email and reporting capabilites  
 
 SHORTHOST=$(hostname --short)
 PARAMETERS="$@"
@@ -23,15 +21,11 @@ OSTYPE=$(cat /etc/redhat-release|awk '{print $1" "$2}')
 OSVER=$(cat /etc/redhat-release |awk '{print $7}')
 KERNEL=$(uname -r)
 SENDMAILCHK=$(rpm -qa|grep sendmail)
-MAILRCPT="roger.hill@yash.com"
+MAILRCPT="hill_roger_k@cat.com"
 MSGBODYTMPFILE="messagebody.tmp"
 REPORTMODE="false"
 optimizedVal="NO" 
 OLD_IFS=$IFS
-me=`uname -n`
-mehosts=`grep $me /etc/hosts`
-
-### Script global function defs ... 
 
 logit() {
 
@@ -296,59 +290,189 @@ basehardware() {
   fi
 }
 
-
-dmesg_mon(){
-
-  ### ... 1.) dmesg monitoring proto-type ...
-  logit "Beginning dmesg check now" 
-  line
-  if [ "$REPORTMODE" == "true" ];then
-    bldHTMLmsgTableHdrFile "Dmesg Error Checking" "Component" "Value"
-  fi
-  DMESG_ERR_PATTERN="err|bad"
-  MYDMESG=$(/bin/dmesg|egrep -i $DMESG_ERR_PATTERN)
-  for line5 in $MYDMESG
-  do
-    if [ "$MYDMESG" != "" ];then
-      logit "dmesg found" $line5
-    fi
-  done
-  if [ "$REPORTMODE" == "true" ];then
-    bldHTMLmsgTableFtrFile
-  fi
-}
-
-
-
-
-
-
-#######################
-### main line logic ### 
-#######################
-
-if [ "$PARONE" != "" ];then
-  PARONE_VAL=$(echo $PARONE|awk -F= '{print $2}')
-
-  if [ "$PARONE_VAL" == "true" ];then
-    logit "Report mode enabled [ OK ]"
-    REPORTMODE="true"
-  else
-    logit "Report mode off"
-  fi
-
-fi
-
 clear 
-# logit "*** QA Server Basic system checklist ***"
+logit "*** QA Server Basic system checklist ***"
 
-## bldHTMLmsgTableFtrFile
-## basehardware
+me=`uname -n`
+mehosts=`grep $me /etc/hosts`
+
+subHeader
+bldHTMLmsgTableFtrFile
+
+basehardware
 
 IFS=$'\n'
 
-### ... 1.) dmesg monitoring proto-type ... 
-dmesg_mon
+### ... 0.) Hostname 
+line
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableHdrFile "Fully Qualified Domain Name" "Component" "Value"
+fi
+logit "0.) Hostname (uname -n) set to:"    "$me" 
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableFtrFile
+fi
+
+### ... 1.) Host file 
+line
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableHdrFile "Hosts file" "Component" "Value"
+fi
+logit "1.) Hostname (/etc/hosts) config file:" "File Contents" 
+ctr=1
+for line0 in $(cat /etc/hosts)
+do 
+  logit "line $ctr:/etc/hosts" $line0 
+  ctr=$(expr $ctr + 1)
+done 
+ctr=0 
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableFtrFile
+fi
+
+### ... 2.) Network config 
+line 
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableHdrFile "Network configuration file" "Component" "Value"
+fi
+logit "2.) Network (/etc/sysconfig/network) config file:" "File Contents"
+ctr=1
+for line in $(cat /etc/sysconfig/network) 
+do 
+  logit "line $ctr:/etc/sysconfig/network" $line 
+  ctr=$(expr $ctr + 1)
+done 
+ctr=0
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableFtrFile
+fi
+
+### ... 3.) DNS
+line 
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableHdrFile "DNS configuration file" "Component" "Value"
+fi
+logit "3.) DNS (/etc/resolv.conf) config file:" "File Contents"
+ctr=1
+for line2 in $(cat /etc/resolv.conf)
+do 
+  logit "line $ctr:/etc/resolv.conf" $line2 
+  ctr=$(expr $ctr + 1)
+done 
+ctr=0
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableFtrFile
+fi
+
+### ... 4.) Net Interface 
+line 
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableHdrFile "Net interface config file" "Component" "Value"
+fi
+logit "4.) Net Interface (/etc/sysconfig/network-scripts/ifcfg-eth0) config file:" "File Contents"
+ctr=1
+for line3 in $(cat /etc/sysconfig/network-scripts/ifcfg-eth0)
+do
+  logit "line $ctr:/etc/sysconfig/network-scripts/ifcfg-eth0" $line3 
+  ctr=$(expr $ctr + 1)
+done 
+ctr=0
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableFtrFile
+fi
+
+### ... 5.) OS version 
+line 
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableHdrFile "Operating System version" "Component" "Value"
+fi
+logit "5.) Redhat Release (/etc/redhat-release) config file:" "File Contents"
+for line4 in $(cat /etc/redhat-release)
+do
+  logit "/etc/redhat-release" $line4
+done 
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableFtrFile
+fi
+
+### ... 6.) Routing Table 
+line 
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableHdrFile "Routing Table" "Component" "Value"
+fi
+logit "6.) Routing Table(route -n)" "Command Output"
+for line5 in $(route -n)
+do 
+  logit "" $line5 
+done 
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableFtrFile
+fi
+
+### ...7.) NTP config 
+line 
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableHdrFile "NTP Config file" "Component" "Value"
+fi
+logit "7.) NTP (/etc/ntp.conf) config file:" 
+ctr=1
+for line6 in $(cat /etc/ntp.conf|egrep -v '^$|#') 
+do 
+  logit "line $ctr:/etc/ntp.conf" $line6
+  ctr=$(expr $ctr + 1)
+done 
+ctr=0 
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableFtrFile
+fi
+
+### ... 8.) NTP Step Tickers... 
+line 
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableHdrFile "NTP Step-tickers Config file" "Component" "Value"
+fi
+logit "8.) NTP Step-tickers (/etc/ntp/step-tickers) config file:"
+ctr=1
+for line8 in $(cat /etc/ntp/step-tickers) 
+do 
+  logit "line $ctr:/etc/ntp/step-tickers" $line8 
+  ctr=$(expr $ctr + 1)
+done 
+ctr=0
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableFtrFile
+fi
+
+### 9.) fstab file
+line
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableHdrFile "The /etc/fstab file" "Component" "Value"
+fi
+logit "9.) fstab file (/etc/fstab) config file:"
+ctr=1
+for line7 in $(cat /etc/fstab)
+do
+  logit "line $ctr:/etc/fstab" $line7
+  ctr=$(expr $ctr + 1)
+done
+ctr=0
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableFtrFile
+fi
+
+### 10.) Mounuted currently ... 
+line
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableHdrFile "Currently mounted:" "Component" "Value"
+fi
+logit "10.) From the \"df -ha\" command :" "Command Output" 
+for line7 in $(df -ha)
+do
+  logit "" $line7
+done
+if [ "$REPORTMODE" == "true" ];then
+  bldHTMLmsgTableFtrFile
+fi
 
 IFS=$OLD_IFS
 
